@@ -93,3 +93,5 @@ local.properties
 DockerFile
 
 .application.yml
+
+Servers/
