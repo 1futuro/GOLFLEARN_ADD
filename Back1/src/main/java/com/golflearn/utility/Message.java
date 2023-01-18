@@ -1,4 +1,4 @@
-package com.golflearn.dto;
+package com.golflearn.utility;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

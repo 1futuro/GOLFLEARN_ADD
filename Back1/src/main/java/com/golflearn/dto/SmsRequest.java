@@ -2,6 +2,8 @@ package com.golflearn.dto;
 
 import java.util.List;
 
+import com.golflearn.utility.Message;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
