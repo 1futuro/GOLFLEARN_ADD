@@ -4,13 +4,14 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import org.springframework.data.annotation.Id;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -29,6 +30,7 @@ import lombok.Setter;
 public class UserInfo {
 
 	@Id
+	@GeneratedValue
 	@Column(name="user_id")
 	private String userId;
 
@@ -51,10 +53,10 @@ public class UserInfo {
 	@Column(name="user_type")
 	private int userType;
 	
-	@Column(name="user_id")
+	@Column(name="user_quit_status")
 	private int userQuitStatus;
 
-	@OneToOne
+	@OneToOne(mappedBy="userInfo")
 	@JoinColumn(name="user_id")
 	private ProInfo proInfo;
 

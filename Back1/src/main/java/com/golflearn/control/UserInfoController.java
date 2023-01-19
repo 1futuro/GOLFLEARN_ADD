@@ -2,17 +2,11 @@ package com.golflearn.control;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Random;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 
-import org.apache.logging.log4j.message.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,20 +16,19 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.golflearn.domain.entity.ProInfo;
 import com.golflearn.domain.entity.UserInfo;
 import com.golflearn.dto.ResultBean;
 import com.golflearn.exception.AddException;
 import com.golflearn.exception.FindException;
-import com.golflearn.exception.ModifyException;
-import com.golflearn.service.SmsService;
+//import com.golflearn.service.SmsService;
 import com.golflearn.service.UserInfoService;
 
 import lombok.RequiredArgsConstructor;
@@ -48,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserInfoController {
 	
-	private final SmsService smsService;
+//	private final SmsService smsService;
 
 	@Autowired // 빈 객체 주입받음
 	private UserInfoService service;
@@ -257,7 +250,9 @@ public class UserInfoController {
 
 	// 로그인
 	@PostMapping(value="login")
-	public ResultBean<UserInfo> login(HttpSession session, @RequestParam String userId, @RequestParam String userPwd, String userNickname, String userType) {
+	public ResultBean<UserInfo> login
+//	(HttpSession session, @RequestParam String userId, @RequestParam String userPwd, String userNickname, String userType) {
+		(HttpSession session, @RequestBody UserInfo userInfo, String userNickname, String userType) {
 		ResultBean<UserInfo> rb = new ResultBean<>();
 		rb.setStatus(0);
 		rb.setMsg("로그아웃 상태");
@@ -266,12 +261,14 @@ public class UserInfoController {
 		session.removeAttribute("userType");
 
 		try {
-			UserInfo userInfo = service.login(userId, userPwd);
+			log.error("userId1 : ", userInfo.getUserId());
+			log.error("userPwd1 : ", userInfo.getUserPwd());
+			userInfo = service.login(userInfo.getUserId(), userInfo.getUserPwd());
 			rb.setStatus(1);
 			rb.setMsg("로그인 성공");
 			rb.setT(userInfo);
 			
-			session.setAttribute("loginInfo", userId);
+//			session.setAttribute("loginInfo", userId);
 			session.setAttribute("loginNickname", userInfo.getUserNickname());
 			session.setAttribute("userType", userInfo.getUserType());
 			
@@ -373,68 +370,68 @@ public class UserInfoController {
 	}	
 
 	//비밀번호 변경 인증 문자 발송
-	@PostMapping(value="find/pwd", produces = MediaType.APPLICATION_JSON_VALUE)
-	//Requestparam으로 userId와 userPhone값을 받아옴
-	public ResultBean <String> selectByUserIdAndPhone(@RequestParam("userId") String userId, @RequestParam("userPhone") String userPhone) throws FindException, JsonProcessingException, InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, URISyntaxException {
-		ResultBean<String> rb = new ResultBean<>();
-
-		UserInfo userInfo = new UserInfo();
-		try {
-			//받아올 값을 담아줄 UserInfo 타입의 userInfo 객체를 생성한다
-			//userId와 userPhone를 매개변수를 가진 UserInfoService에 있는 selectByIdAndPhone 메서드를 호출한다.(서비스호출)
-			userInfo = service.selectByUserIdAndPhone(userId, userPhone);
-			//Message타입의 객체 생성해줌 => 조회해온 폰번호와 발생시킨 난수 set 시켜주기 위해
-			Message message = new Message();
-			
-			//받아온 전화번호 값에서 "-" 제거해줘야함
-			String str = userInfo.getUserPhone();
-			String userNum = str.replaceAll("-","");
-			System.out.println(userNum);
-			message.setTo(userNum);
-			
-			//난수 발생
-			Random rnd = new Random();
-			String randomKey = "";
-			for (int i = 0; i < 5; i++) {
-				//0~9 사이의 숫자들로 난수 발생시킴 => 5번 반복 & 숫자를 문자열로 바꿈
-				String ran = Integer.toString(rnd.nextInt(10));
-				//randomKey에 발생시킨 난수들이 계속 붙음
-				randomKey += ran;
-			}
-			System.out.println(randomKey);
-			
-			message.setContent("GolfLearn 인증번호["+randomKey+"]를 입력해주세요." );
-			//smsService에 있는 sendSms 메서드 호출(message를 매개변수로 함-> set한 정보 넘어감)
-			smsService.sendSms(message);
-			
-			rb.setStatus(1);
-			rb.setT(randomKey);
-		}catch(FindException e) {
-			rb.setStatus(0);
-			rb.setMsg(e.getMessage());
-		}
-		return rb;
-	}	
-	@PostMapping(value="change/pwd", produces = MediaType.APPLICATION_JSON_VALUE) 
-	public ResultBean <?> updateByUserPwd(String userId, @RequestParam("newPwd") String newPwd) throws FindException {
-		ResultBean<?> rb = new ResultBean<>();
-		Message message = new Message();
-//		System.out.println("세션 isNew :" + session.isNew() + ", 세션ID:" + session.getId());
-				try {
-					service.updateByUserPwd(userId, newPwd);
-					rb.setStatus(1);
-					rb.setMsg("비밀번호가 변경되었습니다");
-				} catch (ModifyException e) {
-					e.printStackTrace();
-					rb.setStatus(0);
-					rb.setMsg(e.getMessage());
-				}
-//			}else {
-//				rb.setStatus(0);
-//				rb.setMsg("비밀번호가 일치하지 않습니다");
+//	@PostMapping(value="find/pwd", produces = MediaType.APPLICATION_JSON_VALUE)
+//	//Requestparam으로 userId와 userPhone값을 받아옴
+//	public ResultBean <String> selectByUserIdAndPhone(@RequestParam("userId") String userId, @RequestParam("userPhone") String userPhone) throws FindException, JsonProcessingException, InvalidKeyException, UnsupportedEncodingException, NoSuchAlgorithmException, URISyntaxException {
+//		ResultBean<String> rb = new ResultBean<>();
+//
+//		UserInfo userInfo = new UserInfo();
+//		try {
+//			//받아올 값을 담아줄 UserInfo 타입의 userInfo 객체를 생성한다
+//			//userId와 userPhone를 매개변수를 가진 UserInfoService에 있는 selectByIdAndPhone 메서드를 호출한다.(서비스호출)
+//			userInfo = service.selectByUserIdAndPhone(userId, userPhone);
+//			//Message타입의 객체 생성해줌 => 조회해온 폰번호와 발생시킨 난수 set 시켜주기 위해
+//			Message message = new Message();
+//			
+//			//받아온 전화번호 값에서 "-" 제거해줘야함
+//			String str = userInfo.getUserPhone();
+//			String userNum = str.replaceAll("-","");
+//			System.out.println(userNum);
+//			message.setTo(userNum);
+//			
+//			//난수 발생
+//			Random rnd = new Random();
+//			String randomKey = "";
+//			for (int i = 0; i < 5; i++) {
+//				//0~9 사이의 숫자들로 난수 발생시킴 => 5번 반복 & 숫자를 문자열로 바꿈
+//				String ran = Integer.toString(rnd.nextInt(10));
+//				//randomKey에 발생시킨 난수들이 계속 붙음
+//				randomKey += ran;
 //			}
+//			System.out.println(randomKey);
+//			
+//			message.setContent("GolfLearn 인증번호["+randomKey+"]를 입력해주세요." );
+//			//smsService에 있는 sendSms 메서드 호출(message를 매개변수로 함-> set한 정보 넘어감)
+//			smsService.sendSms(message);
+//			
+//			rb.setStatus(1);
+//			rb.setT(randomKey);
+//		}catch(FindException e) {
+//			rb.setStatus(0);
+//			rb.setMsg(e.getMessage());
 //		}
-		return rb;
-	}
+//		return rb;
+//	}	
+//	@PostMapping(value="change/pwd", produces = MediaType.APPLICATION_JSON_VALUE) 
+//	public ResultBean <?> updateByUserPwd(String userId, @RequestParam("newPwd") String newPwd) throws FindException {
+//		ResultBean<?> rb = new ResultBean<>();
+//		Message message = new Message();
+////		System.out.println("세션 isNew :" + session.isNew() + ", 세션ID:" + session.getId());
+//				try {
+//					service.updateByUserPwd(userId, newPwd);
+//					rb.setStatus(1);
+//					rb.setMsg("비밀번호가 변경되었습니다");
+//				} catch (ModifyException e) {
+//					e.printStackTrace();
+//					rb.setStatus(0);
+//					rb.setMsg(e.getMessage());
+//				}
+////			}else {
+////				rb.setStatus(0);
+////				rb.setMsg("비밀번호가 일치하지 않습니다");
+////			}
+////		}
+//		return rb;
+//	}
 
 }

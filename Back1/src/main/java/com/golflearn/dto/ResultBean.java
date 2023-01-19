@@ -3,6 +3,8 @@ package com.golflearn.dto;
 import java.util.List;
 import java.util.Map;
 
+import com.golflearn.domain.entity.UserInfo;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
