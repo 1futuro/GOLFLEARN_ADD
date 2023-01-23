@@ -122,6 +122,12 @@ $(function() {
     if(loginedNickname == null){
         $("button.btn-outline-success").hide();
     }
+    
+    if(localStorage.getItem("loginedUserType") == 2){ // 관리자
+        $("button[name=download-button]").show();
+    }else{
+        $("button[name=download-button]").hide();
+    }
 
     showList("http://localhost:1126/backresale/resale/board/list");
 
@@ -185,4 +191,19 @@ $(function() {
         // alert($boardNo);
         location.href = '../html/resaledetail.html?resaleBoardNo=' + $boardNo;
     });
+
+    // 엑셀 다운로드 
+    $("button[name=download-button]").click(function(){
+        $.ajax({
+            url: "http://localhost:1126/backresale/resale/downloadExcel",
+            method: "post",
+            success:function(jsonObj){
+                location.href = "http://localhost:1126/backresale/resale/downloadExcel";
+            },
+            error: function(jqXHR){
+                alert("엑셀 다운로드에 실패했습니다.");
+            }
+        });
+    });
+    
 }); // 맨 위의 funcion
