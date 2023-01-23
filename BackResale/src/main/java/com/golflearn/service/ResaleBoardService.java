@@ -1,9 +1,20 @@
 package com.golflearn.service;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Optional;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.slf4j.Logger;
@@ -391,6 +402,74 @@ public class ResaleBoardService {
 			} 
 		} else {
 			throw new RemoveException("게시글이 없습니다");
+		}
+	}
+	
+	public void downloadExcel(HttpServletResponse response) throws IOException{
+		
+		final String fileName ="중고거래 게시글 목록";
+		
+		// 빈 엑셀파일 생성
+		Workbook workbook = new SXSSFWorkbook(); // Excel 2007 이상 버전
+		
+		// 워크시트 생성
+		Sheet sheet = workbook.createSheet();
+		
+		Row row = null;
+		Cell cell = null;
+		
+		// Sheet 채우기 위한 데이터
+		// 헤더
+		String[] header = {"번호", "제목", "내용", "닉네임", "작성일", "조회수", "댓글수","좋아요수"};
+		row = sheet.createRow(0);
+		for(int i = 0 ; i<header.length ; i++) {
+			cell = row.createCell(i);
+			cell.setCellValue(header[i]);
+		}
+		
+		List<ResaleBoardEntity> lr = resaleBoardRepo.findAll();
+		
+		// 바디
+		for(int i = 0 ; i<lr.size() ; i++) {
+			row = sheet.createRow(i+1); // 헤더 이후부터 출력 되어야 하기 때문에 1부터 시작
+			ResaleBoardEntity data = lr.get(i);
+			
+			cell = row.createCell(0);
+			cell.setCellValue(data.getResaleBoardNo());
+			
+			cell = row.createCell(1);
+			cell.setCellValue(data.getResaleBoardTitle());
+
+			cell = row.createCell(2);
+			cell.setCellValue(data.getResaleBoardContent());
+			
+			cell = row.createCell(3);
+			cell.setCellValue(data.getUserNickname());
+			
+			cell = row.createCell(4);
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			cell.setCellValue(dateFormat.format(data.getResaleBoardDt()));
+			
+			cell = row.createCell(5);
+			cell.setCellValue(data.getResaleBoardViewCnt());
+
+			cell = row.createCell(6);
+			cell.setCellValue(data.getResaleBoardCmtCnt());
+			
+			cell = row.createCell(7);
+			cell.setCellValue(data.getResaleBoardLikeCnt());
+			
+		}
+		response.setContentType("application/vnd.ms-excel");
+		response.setHeader("Content-Disposition", "attachment;filename="+ URLEncoder.encode(fileName, "UTF-8") + ".xlsx");
+		
+		FileOutputStream os = new FileOutputStream(fileName);
+		
+		try {
+			workbook.write(response.getOutputStream());
+			workbook.close();			
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 }

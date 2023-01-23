@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -533,6 +534,16 @@ public class ResaleBoardContoller {
 			e.printStackTrace();
 			return new ResponseEntity<>("이미지파일 다운로드 실패" , HttpStatus.INTERNAL_SERVER_ERROR);
 		}		
+	}
+	
+	// 엑셀 다운로드 기능
+	public void downloadExcel(HttpServletResponse response) {
+		
+		try {
+			service.downloadExcel(response);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
 
